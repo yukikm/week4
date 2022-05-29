@@ -8,16 +8,21 @@ import type { NextApiRequest, NextApiResponse } from "next"
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
     const { greeting, nullifierHash, solidityProof } = JSON.parse(req.body)
+    console.log(utils.formatBytes32String(greeting))
 
-    const contract = new Contract("0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512", Greeter.abi)
+    const contract = new Contract("0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266", Greeter.abi)
     const provider = new providers.JsonRpcProvider("http://localhost:8545")
 
     const contractOwner = contract.connect(provider.getSigner())
 
     try {
         await contractOwner.greet(utils.formatBytes32String(greeting), nullifierHash, solidityProof)
+        let greetingMessage = ''
+        let eventMessage = contractOwner.on("NewGreeting", (greeting) => {
+            greetingMessage = greeting
+        })
 
-        res.status(200).end()
+        res.status(200).send(greetingMessage)
     } catch (error: any) {
         const { message } = JSON.parse(error.body).error
         const reason = message.substring(message.indexOf("'") + 1, message.lastIndexOf("'"))

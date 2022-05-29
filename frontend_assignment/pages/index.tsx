@@ -5,9 +5,34 @@ import { providers } from "ethers"
 import Head from "next/head"
 import React from "react"
 import styles from "../styles/Home.module.css"
+import { useForm } from "react-hook-form";
+import { TextField, Button, Stack, Box } from "@mui/material";
+import * as yup from 'yup';
+import { yupResolver } from '@hookform/resolvers/yup';
+
+const registerMui = (res: any) => ({
+    inputRef: res.ref,
+    onChange: res.onChange,
+    onBlur: res.onBlur,
+    name: res.name,
+})
+
+const schema = yup.object({
+    email: yup
+      .string()
+      .required('Required')
+      .email('Check your email address'),
+    name: yup.string().required('Required'),
+    age: yup
+      .number()
+      .required('Required')
+})
 
 export default function Home() {
     const [logs, setLogs] = React.useState("Connect your wallet and greet!")
+    const [newgreeting, setNewGreeting] = React.useState("Response");
+    const { register, handleSubmit, formState: { errors } } = useForm({resolver: yupResolver(schema),});
+    const onSubmit = (data: any) => console.log(data);
 
     async function greet() {
         setLogs("Creating your Semaphore identity...")
@@ -55,6 +80,8 @@ export default function Home() {
 
             setLogs(errorMessage)
         } else {
+            const resMessage = await response.text()
+            setNewGreeting(resMessage)
             setLogs("Your anonymous greeting is onchain :)")
         }
     }
@@ -77,6 +104,33 @@ export default function Home() {
                 <div onClick={() => greet()} className={styles.button}>
                     Greet
                 </div>
+                
+                <div className={styles.dummy}></div>
+                <form onSubmit={handleSubmit(onSubmit)}>
+                    <Stack spacing={2}>
+                        <TextField label="Name" type="text"
+                            {...registerMui(register('name'))}
+                            error={"name" in errors}
+                            helperText={errors.name?.message}
+                        />
+                        <TextField label="Email" type="text"
+                            {...registerMui(register('email'))}
+                            error={"email" in errors}
+                            helperText={errors.email?.message}
+                        />
+                        <TextField label="Age" type="text"
+                            {...registerMui(register('age'))}
+                            error={"age" in errors}
+                            helperText={errors.age?.message}
+                        />
+                        <Button type="submit" variant="contained">Submit</Button>
+                    </Stack>
+                </form>
+                
+                <div className={styles.textBoxTitle}>API Response</div>
+                <Box component="span" sx={{ p: 2, border: '1px dashed grey' }}>
+                    {newgreeting}
+                </Box>
             </main>
         </div>
     )
